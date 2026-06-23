@@ -652,20 +652,37 @@ async function openShare(idx, headline, fact) {
   currentShareText = shareText;
   recordSignal('share', cardDataMap[idx]);
 
-  // Prefer the native share sheet (Android/iOS). Requires a secure context —
-  // the app is served over the https capacitor scheme, so this is available.
+  const cap = window.Capacitor;
+
+  // Native Capacitor Share plugin — fires the real Android/iOS share intent.
+  // The Web Share API (navigator.share) is NOT implemented in the Android
+  // WebView, so on-device we must go through the plugin.
+  if (cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.Share) {
+    try {
+      await cap.Plugins.Share.share({
+        title: 'Infeed',
+        text: shareText,
+        dialogTitle: 'Share this insight',
+      });
+    } catch (e) {
+      // User dismissed the sheet -> message contains "cancel"; ignore that.
+      // Any real failure: fall back to clipboard so the share still works.
+      if (!(e && /cancel/i.test(e.message || ''))) copyShareText();
+    }
+    return;
+  }
+
+  // Browser Web Share API (mobile browsers / desktop that support it).
   if (navigator.share) {
     try {
       await navigator.share({ title: 'Infeed', text: shareText });
     } catch (e) {
-      // AbortError = user dismissed the sheet; that's fine, do nothing.
-      // Any other failure: fall back to clipboard so the share still works.
       if (e && e.name !== 'AbortError') copyShareText();
     }
     return;
   }
 
-  // No Web Share API (e.g. a desktop browser) — copy the text instead.
+  // Final fallback — copy the text to the clipboard.
   copyShareText();
 }
 function closeShare() { document.getElementById('share-panel').classList.remove('open'); }
