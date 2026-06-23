@@ -281,9 +281,10 @@ function getCatColors(cat) { return CAT_COLORS[cat] || CAT_COLORS.Default; }
 // ═══════════════════════════════════════════════
 
 function defaultApiBase() {
-  // Backend runs on the LAN host at 10.0.0.198 — reachable from both a real
-  // device and the browser (the emulator's 10.0.2.2 alias is not needed here).
-  return 'http://10.0.0.198:3000';
+  // Production backend deployed on Railway (HTTPS, no port — TLS on 443).
+  // For local LAN development, override in the console:
+  //   localStorage.setItem('infeedApiBase', 'http://10.0.0.198:3000')
+  return 'https://infeed-server-production.up.railway.app';
 }
 const API_BASE = localStorage.getItem('infeedApiBase') || defaultApiBase();
 
