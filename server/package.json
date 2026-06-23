@@ -4,6 +4,9 @@
   "description": "Infeed backend — cards API, auth, daily cap, admin seed endpoint",
   "type": "commonjs",
   "main": "server.js",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js"
