@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem *)",
+      "Skill(update-config)",
+      "Skill(claude-api)",
+      "PowerShell(Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -ne '127.0.0.1' } | Select-Object IPAddress, InterfaceAlias, PrefixOrigin | Format-Table -AutoSize)",
+      "PowerShell(npm start *)",
+      "PowerShell(Get-NetTCPConnection *)",
+      "PowerShell($envPath = \"C:\\\\Users\\\\josep\\\\infeed\\\\server\\\\.env\"; if \\(Test-Path $envPath\\) { \\(Get-Content $envPath\\) -match 'SEED_ADMIN_KEY' } else { Write-Output \"no .env \\(default key: dev-admin-key-change-me\\)\" })",
+      "Bash(git init *)",
+      "Bash(git add *)"
+    ]
+  }
+}

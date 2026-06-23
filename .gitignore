@@ -1,0 +1,24 @@
+# dependencies
+node_modules/
+
+# backend secrets & local db
+.env.txt
+server/.env
+server/infeed.db
+server/infeed.db-wal
+server/infeed.db-shm
+
+# capacitor / android build output
+app/android/.gradle/
+app/android/build/
+app/android/app/build/
+app/android/local.properties
+app/android/.idea/
+app/android/captures/
+*.apk
+*.aab
+
+# logs / os
+*.log
+.DS_Store
+Thumbs.db

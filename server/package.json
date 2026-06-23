@@ -1,0 +1,16 @@
+{
+  "name": "infeed-server",
+  "version": "1.0.0",
+  "description": "Infeed backend — cards API, auth, daily cap, admin seed endpoint",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

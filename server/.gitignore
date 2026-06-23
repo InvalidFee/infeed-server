@@ -1,0 +1,13 @@
+# Dependencies
+node_modules/
+
+# Environment / secrets
+.env
+
+# SQLite database (and its write-ahead-log sidecar files)
+infeed.db
+infeed.db-shm
+infeed.db-wal
+
+# Runtime logs
+*.log

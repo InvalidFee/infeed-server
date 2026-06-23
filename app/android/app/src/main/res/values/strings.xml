@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Infeed</string>
+    <string name="title_activity_main">Infeed</string>
+    <string name="package_name">com.infeed.app</string>
+    <string name="custom_url_scheme">com.infeed.app</string>
+</resources>

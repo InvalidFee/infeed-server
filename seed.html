@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infeed — Card Seeder</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0A0A0F; --surface: #13131C; --surface2: #1C1C2A;
+    --indigo: #6C63FF; --green: #2EE8A5; --rose: #FF6B8A; --amber: #F5A623;
+    --text: #F0EFF8; --text-dim: rgba(240,239,248,0.55); --border: rgba(255,255,255,0.08);
+    --font-display: 'Space Grotesk', sans-serif; --font-body: 'Inter', sans-serif;
+  }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; padding: 32px 24px; }
+  h1 { font-family: var(--font-display); font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+  h1 span { color: var(--indigo); }
+  .subtitle { font-size: 13px; color: var(--text-dim); margin-bottom: 32px; }
+
+  .config { background: var(--surface); border-radius: 14px; padding: 20px; margin-bottom: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 14px; }
+  label { font-family: var(--font-display); font-size: 12px; font-weight: 600; color: var(--text-dim); letter-spacing: 0.5px; text-transform: uppercase; display: block; margin-bottom: 6px; }
+  input, select { width: 100%; padding: 10px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--font-body); font-size: 14px; outline: none; }
+  input:focus, select:focus { border-color: var(--indigo); }
+  input[type=password] { font-family: monospace; letter-spacing: 2px; }
+
+  .row { display: flex; gap: 12px; }
+  .row > div { flex: 1; }
+
+  .btn { width: 100%; padding: 14px; border-radius: 10px; border: none; font-family: var(--font-display); font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  .btn-primary { background: var(--indigo); color: white; }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-danger { background: transparent; border: 1px solid var(--rose); color: var(--rose); margin-top: 8px; }
+  .btn-danger:hover { background: rgba(255,107,138,0.1); }
+
+  /* STATS BAR */
+  .stats { display: flex; gap: 16px; margin-bottom: 24px; }
+  .stat { flex: 1; background: var(--surface); border-radius: 10px; padding: 14px 16px; border: 1px solid var(--border); }
+  .stat-num { font-family: var(--font-display); font-size: 26px; font-weight: 700; color: var(--indigo); }
+  .stat-label { font-size: 11px; color: var(--text-dim); margin-top: 2px; font-family: var(--font-display); font-weight: 600; letter-spacing: 0.3px; }
+
+  /* PROGRESS */
+  .progress-wrap { background: var(--surface); border-radius: 14px; padding: 20px; margin-bottom: 24px; border: 1px solid var(--border); display: none; }
+  .progress-wrap.active { display: block; }
+  .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .progress-title { font-family: var(--font-display); font-size: 14px; font-weight: 600; }
+  .progress-count { font-family: var(--font-display); font-size: 13px; color: var(--text-dim); }
+  .progress-bar-bg { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; margin-bottom: 16px; }
+  .progress-bar-fill { height: 100%; background: var(--indigo); border-radius: 3px; transition: width 0.4s ease; }
+  .progress-log { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+  .log-entry { font-size: 12px; padding: 8px 10px; border-radius: 6px; background: var(--surface2); line-height: 1.4; }
+  .log-entry.success { border-left: 3px solid var(--green); }
+  .log-entry.error { border-left: 3px solid var(--rose); }
+  .log-entry.info { border-left: 3px solid var(--indigo); }
+
+  /* CARD LIBRARY */
+  .library-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .library-title { font-family: var(--font-display); font-size: 16px; font-weight: 700; }
+  .filter-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .filter-chip { padding: 4px 10px; border-radius: 20px; font-family: var(--font-display); font-size: 11px; font-weight: 600; border: 1.5px solid var(--border); background: transparent; color: var(--text-dim); cursor: pointer; transition: all 0.15s; }
+  .filter-chip.active { border-color: var(--indigo); background: rgba(108,99,255,0.15); color: var(--text); }
+  .card-grid { display: flex; flex-direction: column; gap: 10px; }
+  .card-item { background: var(--surface); border-radius: 10px; padding: 14px; border: 1px solid var(--border); }
+  .card-item-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .card-item-cat { font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; }
+  .card-item-time { font-size: 10px; color: var(--text-dim); margin-left: auto; }
+  .card-item-headline { font-family: var(--font-display); font-size: 14px; font-weight: 600; line-height: 1.3; margin-bottom: 6px; }
+  .card-item-body { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+  .card-item-delete { background: none; border: none; color: var(--rose); cursor: pointer; font-size: 16px; margin-left: 8px; opacity: 0.6; }
+  .card-item-delete:hover { opacity: 1; }
+
+  .export-btn { margin-top: 16px; width: 100%; padding: 11px; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-family: var(--font-display); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .export-btn:hover { border-color: var(--indigo); color: var(--text); }
+
+  /* DEDUPLICATE */
+  .dedup-btn { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-family: var(--font-display); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .dedup-btn:hover { border-color: var(--amber); color: var(--text); }
+  .dedup-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .dedup-results { display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
+  .dedup-results:empty { display: none; }
+  .dedup-status, .dedup-summary { font-size: 13px; color: var(--text-dim); padding: 4px 2px; line-height: 1.5; }
+  .dup-pair { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+  .dup-pair-meta { font-family: var(--font-display); font-size: 11px; font-weight: 600; color: var(--amber); margin-bottom: 10px; letter-spacing: 0.3px; }
+  .dup-cards { display: flex; flex-direction: column; gap: 8px; }
+  .dup-card { background: var(--surface2); border-radius: 8px; padding: 10px 12px; }
+  .dup-card.deleted { opacity: 0.45; }
+  .dup-card.deleted .dup-headline { text-decoration: line-through; }
+  .dup-card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .dup-id { font-family: var(--font-display); font-size: 11px; font-weight: 700; color: var(--text-dim); }
+  .dup-del { margin-left: auto; background: transparent; border: 1px solid var(--rose); color: var(--rose); border-radius: 6px; padding: 3px 10px; font-family: var(--font-display); font-size: 11px; font-weight: 600; cursor: pointer; }
+  .dup-del:hover { background: rgba(255,107,138,0.1); }
+  .dup-del:disabled { opacity: 0.5; cursor: default; border-color: var(--border); color: var(--text-dim); }
+  .dup-headline { font-family: var(--font-display); font-size: 13px; font-weight: 600; line-height: 1.3; margin-bottom: 4px; }
+  .dup-keyfact { font-size: 12px; color: var(--text-dim); line-height: 1.4; }
+</style>
+</head>
+<body>
+
+<h1>in<span>feed</span> <span style="color:var(--text-dim);font-size:16px;font-weight:500;">card seeder</span></h1>
+<p class="subtitle">Generate verified knowledge cards using Claude Sonnet + web search. Cards are saved to the shared localStorage DB.</p>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat"><div class="stat-num" id="statTotal">0</div><div class="stat-label">Cards in DB</div></div>
+  <div class="stat"><div class="stat-num" id="statSession">0</div><div class="stat-label">This session</div></div>
+  <div class="stat"><div class="stat-num" id="statErrors">0</div><div class="stat-label">Errors</div></div>
+</div>
+
+<!-- CONFIG -->
+<div class="config">
+  <div class="row">
+    <div>
+      <label>Backend URL</label>
+      <input type="text" id="backendUrl" value="http://localhost:3000" placeholder="http://localhost:3000">
+    </div>
+    <div>
+      <label>Admin Key</label>
+      <input type="password" id="adminKey" placeholder="from .env SEED_ADMIN_KEY" autocomplete="off">
+    </div>
+  </div>
+  <div>
+    <label>Anthropic API Key</label>
+    <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off">
+  </div>
+  <div class="row">
+    <div>
+      <label>Cards to generate</label>
+      <input type="number" id="count" value="20" min="1" max="500">
+    </div>
+    <div>
+      <label>Delay between calls (ms)</label>
+      <input type="number" id="delay" value="1000" min="200" max="5000">
+    </div>
+  </div>
+  <button class="btn btn-primary" id="startBtn" onclick="startSeeding()">Generate cards</button>
+  <button class="btn btn-danger" onclick="clearDB()">Clear card library</button>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-wrap" id="progressWrap">
+  <div class="progress-header">
+    <span class="progress-title" id="progressTitle">Generating...</span>
+    <span class="progress-count" id="progressCount">0 / 0</span>
+  </div>
+  <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressBar" style="width:0%"></div></div>
+  <div class="progress-log" id="progressLog"></div>
+</div>
+
+<!-- LIBRARY -->
+<div>
+  <div class="library-header">
+    <span class="library-title">Card library</span>
+    <button class="dedup-btn" id="dedupBtn" onclick="findDuplicates()">Find duplicates</button>
+  </div>
+  <div class="dedup-results" id="dedupResults"></div>
+  <div class="filter-row" id="filterRow">
+    <button class="filter-chip active" onclick="filterCards('All', this)">All</button>
+    <button class="filter-chip" onclick="filterCards('Science', this)">Science</button>
+    <button class="filter-chip" onclick="filterCards('History', this)">History</button>
+    <button class="filter-chip" onclick="filterCards('Economics', this)">Economics</button>
+    <button class="filter-chip" onclick="filterCards('Psychology', this)">Psychology</button>
+    <button class="filter-chip" onclick="filterCards('Technology', this)">Technology</button>
+    <button class="filter-chip" onclick="filterCards('Philosophy', this)">Philosophy</button>
+    <button class="filter-chip" onclick="filterCards('Health', this)">Health</button>
+  </div>
+  <div class="card-grid" id="cardGrid"></div>
+  <button class="export-btn" onclick="exportDB()">Export DB as JSON</button>
+</div>
+
+<script>
+const CAT_COLORS = {
+  Science:'#2EE8A5', History:'#F5A623', Economics:'#38BDF8',
+  Psychology:'#C084FC', Technology:'#6C63FF', Philosophy:'#F0EFF8', Health:'#2EE8A5'
+};
+const CATS = ['Science','History','Economics','Psychology','Technology','Philosophy','Health'];
+
+// ── BACKEND API ──
+function getBackendUrl() { return document.getElementById('backendUrl').value.trim().replace(/\/$/, ''); }
+function getAdminKey() { return document.getElementById('adminKey').value.trim(); }
+
+async function fetchExistingCards() {
+  try {
+    const res = await fetch(`${getBackendUrl()}/api/admin/cards`, {
+      headers: { 'x-admin-key': getAdminKey() }
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    db = data.cards || [];
+    existingHeadlines = db.map(c => c.headline);
+    updateStats();
+    renderLibrary(currentFilter);
+    return db;
+  } catch(e) { return []; }
+}
+
+async function postCardToBackend(card) {
+  const res = await fetch(`${getBackendUrl()}/api/seed`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-key': getAdminKey() },
+    body: JSON.stringify({ cards: [card] })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  return data.inserted > 0;
+}
+
+async function deleteCardFromBackend(id) {
+  try {
+    await fetch(`${getBackendUrl()}/api/admin/cards/${id}`, {
+      method: 'DELETE',
+      headers: { 'x-admin-key': getAdminKey() }
+    });
+  } catch(e) {}
+}
+
+function clearDB() {
+  alert('To clear all cards, use the backend admin endpoint directly or delete the server database file.');
+}
+
+// ── STATS ──
+let db = [];
+let sessionCount = 0, errorCount = 0;
+let existingHeadlines = [];
+
+function updateStats() {
+  document.getElementById('statTotal').textContent = db.length;
+  document.getElementById('statSession').textContent = sessionCount;
+  document.getElementById('statErrors').textContent = errorCount;
+}
+updateStats();
+
+// ── LOG ──
+function log(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = `log-entry ${type}`;
+  el.textContent = msg;
+  const logEl = document.getElementById('progressLog');
+  logEl.appendChild(el);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+// ── PERSIST SETTINGS ──
+function saveSettings() {
+  localStorage.setItem('infeedSeedSettings', JSON.stringify({
+    backendUrl: document.getElementById('backendUrl').value,
+    adminKey: document.getElementById('adminKey').value,
+    apiKey: document.getElementById('apiKey').value,
+    count: document.getElementById('count').value,
+    delay: document.getElementById('delay').value,
+  }));
+}
+
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem('infeedSeedSettings') || '{}');
+    if (s.backendUrl) document.getElementById('backendUrl').value = s.backendUrl;
+    if (s.adminKey) document.getElementById('adminKey').value = s.adminKey;
+    if (s.apiKey) document.getElementById('apiKey').value = s.apiKey;
+    if (s.count) document.getElementById('count').value = s.count;
+    if (s.delay) document.getElementById('delay').value = s.delay;
+  } catch(e) {}
+}
+
+// Save on any input change
+['backendUrl','adminKey','apiKey','count','delay'].forEach(id => {
+  document.getElementById(id).addEventListener('change', saveSettings);
+});
+
+async function startSeeding() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const adminKey = getAdminKey();
+  const backendUrl = getBackendUrl();
+  if (!apiKey) { alert('Enter your Anthropic API key'); return; }
+  if (!adminKey) { alert('Enter your Admin key (from server/.env SEED_ADMIN_KEY)'); return; }
+
+  // Verify backend is reachable first
+  try {
+    const health = await fetch(`${backendUrl}/api/health`);
+    if (!health.ok) throw new Error();
+  } catch(e) {
+    alert(`Cannot reach backend at ${backendUrl} — make sure the server is running`);
+    return;
+  }
+
+  // Load existing headlines to avoid duplicates
+  await fetchExistingCards();
+
+  const count = parseInt(document.getElementById('count').value) || 20;
+  const delay = parseInt(document.getElementById('delay').value) || 1000;
+  const topicCycle = [...CATS];
+  let topicIdx = 0;
+
+  running = true;
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('startBtn').textContent = 'Generating...';
+  document.getElementById('progressWrap').classList.add('active');
+  document.getElementById('progressLog').innerHTML = '';
+
+  let generated = 0;
+
+  for (let i = 0; i < count; i++) {
+    const currentTopic = topicCycle[topicIdx % topicCycle.length];
+    topicIdx++;
+
+    document.getElementById('progressCount').textContent = `${i + 1} / ${count}`;
+    document.getElementById('progressBar').style.width = `${((i + 1) / count) * 100}%`;
+    document.getElementById('progressTitle').textContent = `Generating ${currentTopic} card...`;
+
+    const card = await generateCard(apiKey, currentTopic, existingHeadlines);
+    if (card) {
+      const issue = validateCard(card);
+      if (issue) {
+        log(`✗ Rejected — ${issue}: "${card.headline}"`, 'error');
+        errorCount++;
+        updateStats();
+        if (i < count - 1) await sleep(delay);
+        continue;
+      }
+      // Thematic-duplicate check: different headline, same underlying subject.
+      const themeDup = findThematicDuplicate(card, db);
+      if (themeDup) {
+        log(`⚠ Thematic duplicate of "${themeDup.card.headline}" (shared: ${themeDup.shared.join(', ')}) — skipped: ${card.headline}`, 'info');
+        if (i < count - 1) await sleep(delay);
+        continue;
+      }
+      try {
+        const added = await postCardToBackend(card);
+        if (added) {
+          existingHeadlines.push(card.headline);
+          db.push(card);
+          sessionCount++;
+          generated++;
+          log(`✓ [${card.category}] ${card.headline}`, 'success');
+        } else {
+          log(`⚠ Duplicate skipped: ${card.headline}`, 'info');
+        }
+        updateStats();
+        renderLibrary(currentFilter);
+      } catch(e) {
+        log(`✗ Failed to save: ${e.message}`, 'error');
+        errorCount++;
+        updateStats();
+      }
+    } else {
+      errorCount++;
+      updateStats();
+    }
+
+    if (i < count - 1) await sleep(delay);
+  }
+
+  document.getElementById('progressTitle').textContent = `Done — ${generated} cards added to backend`;
+  document.getElementById('startBtn').disabled = false;
+  document.getElementById('startBtn').textContent = 'Generate cards';
+  running = false;
+}
+
+// ── VALIDATION ──
+function validateCard(card) {
+  // Required fields present
+  if (!card.headline || !card.body || !card.keyFact || !card.category) return 'Missing required fields';
+
+  // Category must be valid
+  if (!CATS.includes(card.category)) return `Invalid category: ${card.category}`;
+
+  // Headline checks
+  const h = card.headline.trim();
+  if (h.length < 10) return 'Headline too short';
+  if (h.length > 120) return 'Headline too long';
+
+  // Detect repeated words in headline (e.g. "Eyes Colors" -> "Eye" repeated concept)
+  const words = h.split(/\s+/);
+  const wordSet = new Set(words.map(w => w.toLowerCase().replace(/[^a-z]/g,'')));
+  if (wordSet.size < words.length * 0.7) return 'Headline has repeated words';
+
+  // Body checks
+  const bodyText = card.body.replace(/<[^>]+>/g, '').trim();
+  if (bodyText.length < 60) return 'Body too short';
+  if (bodyText.length > 800) return 'Body too long';
+
+  // keyFact checks
+  if (card.keyFact.length < 10) return 'Key fact too short';
+  if (!card.keyFact.startsWith('—') && !card.keyFact.startsWith('-')) return 'Key fact must start with em-dash';
+
+  // Flag time-sensitive language — words that signal a new, not-yet-settled claim.
+  // NB: bare "today" is intentionally NOT listed. It's commonly used in an evergreen
+  // sense ("structures that still stand today") and was wrongly rejecting good cards.
+  const timeSensitive = /\b(currently|recently|new study|latest|just announced|this year|last year|in 202[0-9]|in 203[0-9]|now trending)\b/i;
+  if (timeSensitive.test(card.headline + ' ' + bodyText)) return 'Contains time-sensitive language';
+
+  // Truncation check — body ending mid-word or mid-sentence suggests token cutoff
+  if (/\w$/.test(bodyText) && !/[.!?]$/.test(bodyText)) return 'Body appears truncated';
+
+  return null; // all good
+}
+
+// ── THEMATIC DUPLICATE DETECTION ──
+// The backend already rejects exact-headline duplicates. This catches cards with a
+// *different* headline that cover the same underlying subject (e.g. two phrasings of
+// "octopuses have three hearts"). We reduce each keyFact to its core subject keywords
+// and flag a new card when it overlaps heavily with an existing one.
+const SUBJECT_STOPWORDS = new Set(['the','a','an','of','to','in','on','and','or','but','for','with','that','this','these','those','is','are','was','were','be','been','being','it','its','as','at','by','from','than','then','them','they','their','there','can','could','would','should','will','about','into','over','under','more','most','less','least','one','two','first','only','also','because','which','who','whom','whose','what','when','where','why','how','not','does','did','has','have','had','your','our','out','off','per','via','each','every','some','any','many','much','very','just','even','still','yet','while','during','between','among','across','after','before','make','made','onto','upon']);
+
+// Reduce a keyFact to a set of distinctive subject keywords.
+function extractSubject(keyFact) {
+  if (!keyFact) return [];
+  return keyFact
+    .replace(/^[—–\-]+\s*/, '')   // drop the leading em-dash / en-dash / hyphen
+    .replace(/<[^>]+>/g, ' ')                // strip any HTML
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')            // strip punctuation
+    .split(/\s+/)
+    .map(w => w.replace(/(ies)$/, 'y').replace(/(es|s)$/, '')) // crude singularise: "hearts"~"heart"
+    .filter(w => w.length > 3 && !SUBJECT_STOPWORDS.has(w));
+}
+
+// Return the existing card a new card thematically duplicates, or null.
+function findThematicDuplicate(newCard, existingCards) {
+  const newSubj = new Set(extractSubject(newCard.keyFact));
+  if (newSubj.size === 0) return null;
+  for (const ex of existingCards) {
+    const exSubj = extractSubject(ex.keyFact || ex.key_fact);
+    if (exSubj.length === 0) continue;
+    const shared = [...new Set(exSubj)].filter(w => newSubj.has(w));
+    // Overlap relative to the smaller subject — two cards about the same narrow
+    // topic will share most of their distinctive keywords.
+    const overlap = shared.length / Math.min(newSubj.size, new Set(exSubj).size);
+    if (shared.length >= 2 && overlap >= 0.5) return { card: ex, shared };
+  }
+  return null;
+}
+
+async function generateCard(apiKey, topic, existingHeadlines) {
+  const avoidLine = existingHeadlines.length > 0
+    ? `Do NOT use these headlines (already in DB): ${existingHeadlines.slice(-20).join(' | ')}` : '';
+
+  const prompt = `You must respond with ONLY a valid JSON object. No markdown, no prose, no headings, no explanation. Your entire response must be parseable by JSON.parse(). If you include anything other than the JSON object, the card will be rejected.
+
+You are building a library of knowledge cards for Infeed — a high-quality factual knowledge app. Your job is to generate one genuinely interesting, accurate, evergreen card.
+
+Topic: ${topic}
+${avoidLine}
+
+ACCURACY REQUIREMENTS:
+- Only state things you are highly confident are factually correct
+- Use web search to verify specific claims, statistics, names, and dates before including them
+- If you are uncertain about a specific fact, choose a different angle where you are certain
+- Never fabricate plausible-sounding details — it is better to be vaguer than to be wrong
+
+EVERGREEN REQUIREMENTS — this card must still be accurate and interesting in 5 years:
+- No references to "recently", "currently", "new", "latest", "emerging", "today", "now"
+- No specific years unless it is a fixed historical fact (e.g. "in 1953" is fine, "in 2024" is not)
+- No living people's current roles or positions — these change
+- No statistics that update regularly (prices, stock values, population figures, rankings, rates)
+- No ongoing events, current conflicts, recent elections, or developing stories
+- No "recent studies" or "new research" — cite established, replicated science only
+- Focus on mechanisms and principles (why things work), not current events (what is happening now)
+- Historical facts, human behaviour, mathematics, established science, and origin stories are ideal
+
+A good test: would this card be just as accurate and interesting if someone read it in 2030?
+
+ORIGINALITY REQUIREMENTS — the reader has seen the obvious facts already:
+- Avoid well-known viral facts and common internet trivia. Do not generate cards about tardigrades, Roman concrete, the trolley problem, the Antikythera mechanism, or other facts that are already widely circulated online. Prioritise obscure, underappreciated, or counterintuitive facts that most people genuinely would not know.
+
+Return ONLY a valid JSON object (no markdown, no backticks, no preamble):
+{
+  "category": "${topic === 'Mix' ? 'one of Science/History/Economics/Psychology/Technology/Philosophy/Health' : topic}",
+  "subtopics": ["array", "of", "1-3 subtopic strings"],
+  "readSeconds": (integer 20-50),
+  "headline": "punchy specific surprising max-12-word headline",
+  "body": "2-3 sentences with verified specific facts. HTML allowed: use <strong> for 1-2 key terms.",
+  "keyFact": "one crisp memorable takeaway max 20 words starting with an em-dash"
+}
+
+Make the reader feel genuinely smarter. Be specific — real names, verified numbers, actual dates.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await res.json();
+    if (data.error) { log(`API error: ${data.error.message}`, 'error'); errorCount++; return null; }
+
+    // Extract the final text block (after any tool use)
+    const textBlock = data.content?.filter(b => b.type === 'text').pop();
+    if (!textBlock) { log('No text in response', 'error'); errorCount++; return null; }
+
+    let raw = textBlock.text.trim();
+
+    // Strip markdown code fences if present
+    raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+
+    // Extract JSON object if there's surrounding text
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) {
+      log(`No JSON found in response: ${raw.slice(0, 100)}`, 'error');
+      errorCount++;
+      return null;
+    }
+
+    const parsed = JSON.parse(match[0]);
+    return parsed;
+  } catch(e) {
+    log(`Error: ${e.message}`, 'error');
+    errorCount++;
+    return null;
+  }
+}
+
+// ── DEDUPLICATE ──
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, m => (
+    { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m]
+  ));
+}
+
+async function findDuplicates() {
+  const adminKey = getAdminKey();
+  if (!adminKey) { alert('Enter your Admin key (from server/.env SEED_ADMIN_KEY)'); return; }
+
+  const btn = document.getElementById('dedupBtn');
+  const container = document.getElementById('dedupResults');
+  btn.disabled = true; btn.textContent = 'Scanning…';
+  container.innerHTML = '<div class="dedup-status">Scanning card library…</div>';
+
+  try {
+    const res = await fetch(`${getBackendUrl()}/api/admin/deduplicate`, {
+      headers: { 'x-admin-key': adminKey }
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      container.innerHTML = `<div class="dedup-status">Error: ${escapeHtml(err.error || ('HTTP ' + res.status))}</div>`;
+      return;
+    }
+    renderDuplicates(await res.json());
+  } catch(e) {
+    container.innerHTML = `<div class="dedup-status">Could not reach backend: ${escapeHtml(e.message)}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Find duplicates';
+  }
+}
+
+function renderDuplicates(data) {
+  const container = document.getElementById('dedupResults');
+  if (!data.duplicates || data.duplicates.length === 0) {
+    container.innerHTML = `<div class="dedup-status">No suspected duplicates among ${data.scanned} cards. ✓</div>`;
+    return;
+  }
+  const summary = `<div class="dedup-summary">${data.suspected} suspected duplicate pair${data.suspected === 1 ? '' : 's'} among ${data.scanned} cards (threshold ${data.threshold}, min shared ${data.minShared}). Delete the card you don't want to keep from each pair.</div>`;
+  const pairs = data.duplicates.map(d => {
+    const cards = d.cards.map(c => `
+      <div class="dup-card" id="dupcard-${c.id}">
+        <div class="dup-card-top">
+          <span class="dup-id">#${c.id}</span>
+          <button class="dup-del" onclick="deleteDuplicate(${c.id})">Delete</button>
+        </div>
+        <div class="dup-headline">${escapeHtml(c.headline)}</div>
+        <div class="dup-keyfact">${escapeHtml(c.keyFact)}</div>
+      </div>`).join('');
+    return `<div class="dup-pair">
+      <div class="dup-pair-meta">similarity ${d.similarity} · shared: ${d.shared.map(escapeHtml).join(', ')}</div>
+      <div class="dup-cards">${cards}</div>
+    </div>`;
+  }).join('');
+  container.innerHTML = summary + pairs;
+}
+
+async function deleteDuplicate(id) {
+  if (!confirm(`Delete card #${id}? This cannot be undone.`)) return;
+  await deleteCardFromBackend(id);
+  // Reflect the deletion in local state + both views.
+  db = db.filter(c => String(c.id) !== String(id) && String(c.dbId) !== String(id));
+  const el = document.getElementById(`dupcard-${id}`);
+  if (el) {
+    el.classList.add('deleted');
+    const delBtn = el.querySelector('.dup-del');
+    delBtn.textContent = 'Deleted'; delBtn.disabled = true;
+  }
+  updateStats();
+  renderLibrary(currentFilter);
+}
+
+// ── LIBRARY ──
+let currentFilter = 'All';
+
+function filterCards(cat, btn) {
+  currentFilter = cat;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  renderLibrary(cat);
+}
+
+function renderLibrary(filter) {
+  const cards = filter === 'All' ? db : db.filter(c => c.category === filter);
+  const sorted = [...cards].reverse();
+  const grid = document.getElementById('cardGrid');
+  if (sorted.length === 0) { grid.innerHTML = '<div style="color:var(--text-dim);font-size:13px;padding:20px 0;">No cards yet</div>'; return; }
+  grid.innerHTML = sorted.slice(0, 50).map((c) => {
+    const color = CAT_COLORS[c.category] || '#6C63FF';
+    const time = c.storedAt ? new Date(c.storedAt).toLocaleDateString() : (c.created_at ? new Date(c.created_at).toLocaleDateString() : '');
+    const id = c.id || c.dbId;
+    return `<div class="card-item">
+      <div class="card-item-meta">
+        <span class="card-item-cat" style="background:${color}22;color:${color};">${c.category}</span>
+        <span class="card-item-time">${time}</span>
+        <button class="card-item-delete" onclick="deleteCard('${id}')">×</button>
+      </div>
+      <div class="card-item-headline">${c.headline}</div>
+      <div class="card-item-body">${(c.body||'').replace(/<[^>]+>/g,'').slice(0,120)}...</div>
+    </div>`;
+  }).join('');
+}
+
+function deleteCard(id) {
+  if (!confirm('Delete this card?')) return;
+  deleteCardFromBackend(id);
+  db = db.filter(c => String(c.id) !== String(id) && String(c.dbId) !== String(id));
+  updateStats();
+  renderLibrary(currentFilter);
+}
+
+function exportDB() {
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `infeed-cards-${Date.now()}.json`;
+  a.click();
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Load library on page open if backend fields are pre-filled
+window.addEventListener('load', () => {
+  loadSettings();
+  if (getAdminKey()) fetchExistingCards();
+});
+
+renderLibrary('All');
+</script>
+</body>
+</html>

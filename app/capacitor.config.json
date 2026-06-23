@@ -1,0 +1,10 @@
+{
+  "appId": "com.infeed.app",
+  "appName": "Infeed",
+  "webDir": "www",
+  "server": {
+    "_comment": "androidScheme is set to 'http' for LOCAL DEVELOPMENT ONLY so the app is served over http://localhost and plain-HTTP calls to the dev backend (10.0.0.198:3000) are not blocked as mixed content. Change this back to 'https' when the backend is deployed with HTTPS for production.",
+    "androidScheme": "http",
+    "cleartext": true
+  }
+}
