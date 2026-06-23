@@ -647,13 +647,29 @@ function markNotInterested(btn, idx) {
   }
 }
 
-function openShare(idx, headline, fact) {
-  currentShareText = `"${headline}"\n\n${fact}\n\n— via Infeed`;
+async function openShare(idx, headline, fact) {
+  const shareText = `"${headline}"\n\n${fact}\n\nLearn something new on Infeed`;
+  currentShareText = shareText;
   recordSignal('share', cardDataMap[idx]);
-  document.getElementById('share-panel').classList.add('open');
+
+  // Prefer the native share sheet (Android/iOS). Requires a secure context —
+  // the app is served over the https capacitor scheme, so this is available.
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'Infeed', text: shareText });
+    } catch (e) {
+      // AbortError = user dismissed the sheet; that's fine, do nothing.
+      // Any other failure: fall back to clipboard so the share still works.
+      if (e && e.name !== 'AbortError') copyShareText();
+    }
+    return;
+  }
+
+  // No Web Share API (e.g. a desktop browser) — copy the text instead.
+  copyShareText();
 }
 function closeShare() { document.getElementById('share-panel').classList.remove('open'); }
-function copyShareText() { navigator.clipboard.writeText(currentShareText).catch(()=>{}); closeShare(); showToast('📋 Copied!'); }
+function copyShareText() { navigator.clipboard.writeText(currentShareText).catch(()=>{}); closeShare(); showToast('📋 Copied to clipboard'); }
 
 // ═══════════════════════════════════════════════
 //  PROFILE PANEL
